@@ -1,4 +1,5 @@
-#include <LiquidCrystal.h>
+
+
 #include <Keypad.h>
 #include <LiquidCrystal_I2C.h>
 
@@ -61,7 +62,7 @@ byte rowPins[ROWS] = {9, 8, 7, 6};
 byte colPins[COLS] = {5, 4, 3, 2}; 
 
 Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS); 
-LiquidCrystal_I2C lcd(0x21, 16, 2);  
+LiquidCrystal_I2C lcd(0x27, 16, 2);  
 
 void setup(){
   encendido=false;
@@ -72,10 +73,10 @@ void setup(){
   lcd.createChar(0, grados);
 
   lcd.home();
-  lcd.print("Ingrese T");
+  lcd.print("Ingrese Temp");
   lcd.setCursor(0, 1); 
   lcd.print("en ");
-  lcd.print(byte(0));
+  lcd.write(byte(0));
   lcd.print("Centigrados");
 }
   
