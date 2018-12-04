@@ -1,9 +1,10 @@
-
-
 #include <Keypad.h>
 #include <LiquidCrystal_I2C.h>
 
 int PIN_PWM=10;
+int PIN_LECTURA=0;
+int PIN_ENCENDIDO=10;
+int PIN_LLEGO=11;
 
 const byte ROWS = 4; 
 const byte COLS = 4; 
@@ -21,6 +22,7 @@ float tDeseada;
 String entrada="";
 boolean hayPunto=false;
 boolean escribiendo=false;
+boolean llego=false;
 
 double integral = 0;
 double derivador = 0;
@@ -81,9 +83,12 @@ void setup(){
 }
   
 void loop(){
-  if(millis()-tiempoEnvio>5000){
+  if(encendido && millis()-tiempoEnvio>5000){
     tiempoEnvio=millis();
     Serial.println(String(tAct));
+    if(llego){
+      Serial.println(String("V"));
+    }
   }
   char customKey = customKeypad.getKey();
   if (customKey){
@@ -141,6 +146,19 @@ void loop(){
 
   if(encendido && millis()-tiempoSeguir>1000){
     seguir();
+    if(encendido){
+      digitalWrite(PIN_ENCENDIDO, HIGH); 
+    }
+    else{
+      digitalWrite(PIN_ENCENDIDO, LOW); 
+    }
+  
+    if(llego){
+      digitalWrite(PIN_LLEGO, HIGH); 
+    }
+    else{
+      digitalWrite(PIN_LLEGO, LOW); 
+    }
   }
 }
 
@@ -155,7 +173,7 @@ void comprobarTemperatura(float val){
     lcd.print(" y ");
     lcd.print(MAX_T,0);
     lcd.print(" ");
-    lcd.print(byte(0));
+    lcd.write(byte(0));
     lcd.print("C");
     delay(2000);
   }
@@ -170,12 +188,12 @@ void reestablecerLCD(){
      lcd.home();
      lcd.print("Actual: ");
      lcd.print(tAct,2);
-     lcd.print(byte(0));
+     lcd.write(byte(0));
      lcd.print("C");
      lcd.setCursor(0, 1);
      lcd.print("Deseada: ");
      lcd.print(tDeseada,2);
-     lcd.print(byte(0));
+     lcd.write(byte(0));
      lcd.print("C");
      
   }
@@ -184,7 +202,7 @@ void reestablecerLCD(){
     lcd.print("Ingrese T");
     lcd.setCursor(0, 1); 
     lcd.print("en ");
-    lcd.print(byte(0));
+    lcd.write(byte(0));
     lcd.print("Centigrados");
   }
 }
@@ -196,18 +214,19 @@ void actualizarEscribiendo(){
    lcd.print(" y ");
    lcd.print(MAX_T,0);
    lcd.print(" ");
-   lcd.print(byte(0));
+   lcd.write(byte(0));
    lcd.print("C");
    lcd.setCursor(0, 1); 
    lcd.print("Deseada: ");
    lcd.print(entrada);
    lcd.print(" ");
-   lcd.print(byte(0));
+   lcd.write(byte(0));
    lcd.print("Centigrados");
 }
 
 void apagar(){
   encendido = false;
+  llego=false;
   analogWrite(PIN_PWM, 0);
   Serial.println('C');
   reestablecerLCD();
@@ -220,12 +239,25 @@ void encender(float val){
   Serial.println('H');
   Serial.print(String(tDeseada));
   Serial.print(":::");
+  convertirTemperatura();
   Serial.println(String(tAct));
 }
 
+void convertirTemperatura(){
+  int valorT= analogRead(PIN_LECTURA);
+  tAct= 0.0475*valorT+13.668;
+}
+
 void seguir() {
+  convertirTemperatura();
   //Serial.println("seguir");
-  error = tAct - tDeseada;
+  error = tDeseada - tAct;
+  if(abs(error)<1){
+    llego=true;
+  }
+  else{
+    llego=false;
+  }
   derivador = error - error5;
   integral = error_ant + error2 + error3 + error4 + error5 + error6 + error7 + error8 + error9 + error10 + error;
   error10 = error9;
