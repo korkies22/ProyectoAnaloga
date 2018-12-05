@@ -73,7 +73,7 @@ public class DeviceList extends AppCompatActivity {
             String info = ((TextView) view).getText().toString();
             String address = info.substring(info.length()-17);
 
-            Intent i = new Intent(DeviceList.this, temperatureControl.class);
+            Intent i = new Intent(DeviceList.this, TemperatureControl.class);
             i.putExtra(EXTRA_ADDRESS, address);
             startActivity(i);
         }

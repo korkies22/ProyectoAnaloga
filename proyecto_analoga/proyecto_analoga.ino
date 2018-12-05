@@ -23,6 +23,7 @@ String entrada="";
 boolean hayPunto=false;
 boolean escribiendo=false;
 boolean llego=false;
+boolean porBluetooth=false;
 
 double integral = 0;
 double derivador = 0;
@@ -85,14 +86,16 @@ void setup(){
 void loop(){
   if(encendido && millis()-tiempoEnvio>5000){
     tiempoEnvio=millis();
-    Serial.println(String(tAct));
     if(llego){
-      Serial.println(String("V"));
+      Serial.println("V:::"+String(tAct));
+    }
+    else{
+       Serial.println("H:::"+String(tAct));
     }
   }
+  
   char customKey = customKeypad.getKey();
   if (customKey){
-    Serial.println(customKey);
     if(customKey=='A'){
       apagar();
       entrada="";
@@ -131,16 +134,24 @@ void loop(){
 
   if(Serial.available() > 0)
   {
+    porBluetooth=true;
     char inChar = Serial.read();
     if(inChar == 'T')
     {
-       Serial.println(String(tAct));
        float val= Serial.parseFloat();
        comprobarTemperatura(val);
+       if(tDeseada==val){
+        Serial.println("H"+:::+(String(tAct));
+       }
+       else{
+        Serial.println('F');
+       }
+       
     }
     else if(inChar == 'C')
     {
        apagar();
+       porBluetooth=false;
     } 
   }
 
@@ -236,11 +247,7 @@ void encender(float val){
   tDeseada=val;
   encendido=true;
   tiempoSeguir=0;
-  Serial.println('H');
-  Serial.print(String(tDeseada));
-  Serial.print(":::");
   convertirTemperatura();
-  Serial.println(String(tAct));
 }
 
 void convertirTemperatura(){
