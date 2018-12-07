@@ -1,10 +1,25 @@
+
 #include <Keypad.h>
 #include <LiquidCrystal_I2C.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+ 
+// Data wire is plugged into pin 2 on the Arduino
+#define ONE_WIRE_BUS 11
+ 
+// Setup a oneWire instance to communicate with any OneWire devices 
+// (not just Maxim/Dallas temperature ICs)
+OneWire oneWire(ONE_WIRE_BUS);
+
+double temperature;
+ 
+// Pass our oneWire reference to Dallas Temperature.
+DallasTemperature sensors(&oneWire);
 
 int PIN_PWM=10;
-int PIN_LECTURA=0;
-int PIN_ENCENDIDO=10;
-int PIN_LLEGO=11;
+int PIN_SISTEMA=A0;
+int PIN_ENCENDIDO=A1;
+int PIN_LLEGO=A2;
 
 const byte ROWS = 4; 
 const byte COLS = 4; 
@@ -71,9 +86,20 @@ void setup(){
   encendido=false;
   analogWrite(PIN_PWM, 0);
   Serial.begin(9600);
+
+  // Start up the library
+  sensors.begin();
+  sensors.setResolution(12);
   lcd.init();
   lcd.backlight();
   lcd.createChar(0, grados);
+
+  pinMode(PIN_SISTEMA,OUTPUT);
+  pinMode(PIN_ENCENDIDO,OUTPUT);
+  pinMode(PIN_LLEGO,OUTPUT);
+  digitalWrite(PIN_SISTEMA,HIGH);
+  digitalWrite(PIN_ENCENDIDO,LOW);
+  digitalWrite(PIN_LLEGO,LOW);
 
   lcd.home();
   lcd.print("Ingrese Temp");
@@ -141,7 +167,7 @@ void loop(){
        float val= Serial.parseFloat();
        comprobarTemperatura(val);
        if(tDeseada==val){
-        Serial.println("H"+:::+(String(tAct));
+        Serial.println("H:::"+(String(tAct)));
        }
        else{
         Serial.println('F');
@@ -251,8 +277,8 @@ void encender(float val){
 }
 
 void convertirTemperatura(){
-  int valorT= analogRead(PIN_LECTURA);
-  tAct= 0.0475*valorT+13.668;
+  sensors.requestTemperatures(); // Send the command to get temperatures
+  tAct=sensors.getTempCByIndex(0);
 }
 
 void seguir() {
