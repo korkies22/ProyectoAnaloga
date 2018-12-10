@@ -6,6 +6,8 @@
  
 // Data wire is plugged into pin 2 on the Arduino
 #define ONE_WIRE_BUS 11
+#define MAX_PWM 255
+#define MIN_PWM 0
  
 // Setup a oneWire instance to communicate with any OneWire devices 
 // (not just Maxim/Dallas temperature ICs)
@@ -29,6 +31,8 @@ const float MAX_T=50.0;
 
 unsigned long tiempoEnvio=0;
 unsigned long tiempoSeguir=0;
+unsigned long tiempoLCD=0;
+boolean mostradoMensajePID=false;
 boolean encendido;
 
 float tAct;
@@ -39,12 +43,13 @@ boolean hayPunto=false;
 boolean escribiendo=false;
 boolean llego=false;
 boolean porBluetooth=false;
+boolean encenderPID=false;
 
 double integral = 0;
 double derivador = 0;
-double kp = 0.1;
-double ki = 0.001;
-double kd = 0.01;
+double kp = 1;
+double ki = 0.1;
+double kd = 1;
 double pid = 0;
 double error_ant = 0;
 double error = 0;
@@ -181,8 +186,46 @@ void loop(){
     } 
   }
 
-  if(encendido && millis()-tiempoSeguir>1000){
-    seguir();
+  if(encendido && millis()-tiempoSeguir>400){
+    tiempoSeguir=millis();
+     convertirTemperatura();
+     if(tAct<0){
+      return;
+     }
+     if(abs(tDeseada - tAct)<4){
+      encenderPID=true;
+      if(tDeseada>tAct){
+        integral=(255/ki)/1.2;
+      }
+      else{
+        integral=(-255/ki)/1.2;
+      }
+     }
+     else if(abs(tDeseada - tAct)>10){
+      mostradoMensajePID=false;
+      error10 =0;
+      error9 = 0;
+      error8 = 0;
+      error7 = 0;
+      error6 = 0;
+      error5 = 0;
+      error4 = 0;
+      error3 = 0;
+      error2 = 0;
+      error_ant = 0;
+      error=0;
+      integral=0;
+      encenderPID=false;
+      if(tDeseada>=tAct){
+         analogWrite( PIN_PWM, MAX_PWM);
+      }
+      else{
+        analogWrite( PIN_PWM, MIN_PWM);
+      }
+     }
+    if(encenderPID){
+      seguir();
+    }
     if(encendido){
       digitalWrite(PIN_ENCENDIDO, HIGH); 
     }
@@ -197,6 +240,11 @@ void loop(){
       digitalWrite(PIN_LLEGO, LOW); 
     }
   }
+  if(millis()-tiempoLCD>1000){
+    tiempoLCD=millis();
+    reestablecerLCD();
+  }
+  
 }
 
 void comprobarTemperatura(float val){
@@ -217,11 +265,18 @@ void comprobarTemperatura(float val){
   else{
     encender(val);
   }
-  reestablecerLCD();
 }
 
 void reestablecerLCD(){
-  if(encendido){
+  if(!mostradoMensajePID){
+    mostradoMensajePID=true;
+    lcd.home();
+    lcd.print("PWM activado");
+    lcd.setCursor(0, 1); 
+    lcd.print("Estamos cerca");
+    delay(1500);
+  }
+  else if(encendido){
      lcd.home();
      lcd.print("Actual: ");
      lcd.print(tAct,2);
@@ -232,7 +287,6 @@ void reestablecerLCD(){
      lcd.print(tDeseada,2);
      lcd.write(byte(0));
      lcd.print("C");
-     
   }
   else{
     lcd.home();
@@ -264,9 +318,10 @@ void actualizarEscribiendo(){
 void apagar(){
   encendido = false;
   llego=false;
-  analogWrite(PIN_PWM, 0);
+  encenderPID=false;
+  mostradoMensajePID=false;
+  analogWrite(PIN_PWM, MIN_PWM);
   Serial.println('C');
-  reestablecerLCD();
 }
 
 void encender(float val){
@@ -282,17 +337,22 @@ void convertirTemperatura(){
 }
 
 void seguir() {
-  convertirTemperatura();
   //Serial.println("seguir");
   error = tDeseada - tAct;
-  if(abs(error)<1){
+  if(abs(error)<1 && abs(integral)<2){
     llego=true;
   }
   else{
     llego=false;
   }
   derivador = error - error5;
-  integral = error_ant + error2 + error3 + error4 + error5 + error6 + error7 + error8 + error9 + error10 + error;
+  integral = integral+error;
+  if(ki!=0 && integral>(255/ki)){
+    integral=(255/ki);
+  }
+  if(ki!=0 && integral<(-255/ki)){
+    integral=(-255/ki);
+  }
   error10 = error9;
   error9 = error8;
   error8 = error7;
@@ -305,13 +365,13 @@ void seguir() {
   error_ant = error;
   pid = kp * error + kd * derivador + ki * integral;
   double valPWM = pid;
-  if (valPWM > 255)
+  if (valPWM > MAX_PWM)
   {
-    valPWM=255;
+    valPWM=MAX_PWM;
   }
-  else if (valPWM < 0)
+  else if (valPWM < MIN_PWM)
   {
-    valPWM=0;
+    valPWM=MIN_PWM;
   }
   analogWrite( PIN_PWM, (int)valPWM);
 }
