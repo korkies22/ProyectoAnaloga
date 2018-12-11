@@ -110,6 +110,12 @@ public class Thermometer extends View {
 
     }
 
+    public void changeInnerColor(int innerColor){
+        innerPaint = new Paint();
+        innerPaint.setColor(innerColor);
+        innerPaint.setStyle(Paint.Style.FILL);
+    }
+
     public static float convertDpToPixel(float dp, Context context){
         Resources resources = context.getResources();
         DisplayMetrics metrics = resources.getDisplayMetrics();

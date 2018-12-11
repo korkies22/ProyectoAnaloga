@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
@@ -50,7 +51,6 @@ public class TemperatureControl extends AppCompatActivity {
         setContentView(R.layout.temperature_control);
         btnEnviar = (Button) findViewById(R.id.buttonEnviar);
         btnDis = (Button) findViewById(R.id.button4);
-        btnDis = (Button) findViewById(R.id.button4);
         textError= (TextView) findViewById(R.id.textError);
         editTextT = (EditText) findViewById(R.id.editTextT);
         editTextT.addTextChangedListener(new TextWatcher() {
@@ -78,20 +78,22 @@ public class TemperatureControl extends AppCompatActivity {
                         textError.setVisibility(View.VISIBLE);
                     }
                 }
-                catch (Exception e){
+                catch (Exception ignored){
 
                 }
             }
         });
         curTemp= (TextView) findViewById(R.id.curTemp);
         thermometer= (Thermometer) findViewById(R.id.thermometer);
-
+        thermometer.changeInnerColor(Color.RED);
         new ConnectBT().execute();
 
         btnEnviar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick (View v) {
                 cThread.write("T"+editTextT.getText().toString());
+                btnDis.setVisibility(View.VISIBLE);
+                btnEnviar.setVisibility(View.GONE);
             }
         });
 
@@ -118,6 +120,7 @@ public class TemperatureControl extends AppCompatActivity {
                 String readMessage = (String) msg.obj;
                 if(readMessage.startsWith("H")){
                     String[] params= readMessage.split(":::");
+                    activity.thermometer.changeInnerColor(Color.RED);
                     activity.setTAct(params[1]);
                 }
                 else if(readMessage.startsWith("F")){
@@ -125,6 +128,7 @@ public class TemperatureControl extends AppCompatActivity {
                 }
                 else if(readMessage.startsWith("V")){
                     String[] params= readMessage.split(":::");
+                    activity.thermometer.changeInnerColor(Color.BLUE);
                     activity.setTAct(params[1]);
                 }
             }
@@ -204,7 +208,7 @@ public class TemperatureControl extends AppCompatActivity {
     //create new class for connect thread
     private class ConnectedThread extends Thread {
         private final InputStream mmInStream;
-        private final PrintWriter mmOutStream;
+        private PrintWriter mmOutStream;
 
         //creation of the connect thread
         public ConnectedThread(BluetoothSocket socket) {
@@ -215,10 +219,12 @@ public class TemperatureControl extends AppCompatActivity {
                 //Create I/O streams for connection
                 tmpIn = socket.getInputStream();
                 tmpOut = socket.getOutputStream();
-            } catch (IOException e) { }
-
+            } catch (IOException ignored) { }
             mmInStream = tmpIn;
-            mmOutStream = new PrintWriter(tmpOut);
+            if(tmpOut!=null){
+                mmOutStream = new PrintWriter(tmpOut);
+            }
+
         }
 
         public void run() {

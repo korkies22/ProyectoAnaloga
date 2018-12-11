@@ -28,6 +28,7 @@
                 android:layout_marginBottom="52dp"
                 android:layout_weight="1"
                 android:background="@android:color/holo_red_light"
+                android:visibility="gone"
                 android:text="Desconectar"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -123,12 +124,12 @@
                 android:layout_height="wrap_content"
                 android:layout_centerHorizontal="true"
                 android:layout_marginTop="8dp"
-                app:innerColor="@color/innerColor"
+                app:innerColor="@color/outerColor"
                 app:layout_constraintEnd_toStartOf="@+id/guideline"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/buttonEnviar"
                 app:middleColor="@color/middleColor"
-                app:outerColor="@color/outerColor"
+                app:outerColor="@color/innerColor"
                 app:radius="60dp" />
 
             <android.support.constraint.Guideline
